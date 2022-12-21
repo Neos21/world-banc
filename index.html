@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>World Banc</title>
+    <link rel="icon" type="image/vnd.microsoft.icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAA==">
+    <style>
+
+*, ::before, ::after { box-sizing: border-box; }
+html {
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+  font-family: "Noto Sans Mono CJK JP", Osaka-mono, "MS Gothic", Menlo, Consolas, Courier, "Courier New", monospace, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  text-decoration-skip-ink: none;
+  -webkit-text-decoration-skip: objects;
+  touch-action: manipulation;
+  font-size: 16px;
+  line-height: 1.3;
+  word-break: break-all;
+  cursor: default;
+}
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 1em .5em;
+}
+a                                            { color: #00f; text-decoration: none     ; display: block  ; }
+a:hover, #list-path:hover, #list-error:hover { color: #f00; text-decoration: underline; cursor : pointer; }
+input    { color: inherit; font-size: inherit; font-family: inherit; }
+p        { font-weight: bold; }
+p, table { margin: 0 0 1em; }
+.right   { text-align: right; }
+.nowrap  { white-space: nowrap; }
+.error   { color: #f00; font-weight: bold; }
+.table-wrapper   { width: 100%; overflow-x: auto; }
+table            { min-width: 100%; border-collapse: collapse; }
+th, td           { padding: 0 .5em .5em 0; vertical-align: top; }
+tr > :last-child { padding-right: 0; }
+thead th         { text-align: left; white-space: nowrap; }
+thead th:first-child { min-width: 14.5em; }  /* Name Column */
+#login-component, #list-component { display: none; }  /* Default */
+#login-component > p:nth-child(2)  { display: grid; grid-template-columns: 1fr auto; column-gap: .5em; }
+#list-component > p:last-child { padding-bottom: 2em; }
+
+    </style>
+  </head>
+  <body ontouchend="">
+
+<div id="login-component">
+  <p>World Banc</p>
+  <p>
+    <input type="password" id="login-token" placeholder="Token" value="">
+    <input type="button" value="Login" onclick="login();">
+  </p>
+  <p id="login-error" class="error"></p>
+</div>
+
+<div id="list-component">
+  <p id="list-path" onclick="showDirectory(undefined, '/');"></p>
+  <p id="list-error" class="error" onclick="showDirectory(undefined, '/');"></p>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody id="list-directory-tbody"></tbody>
+    </table>
+  </div>
+  <p class="right"><input type="button" value="Logout" onclick="renderComponent('login');"></p>
+</div>
+
+    <script>
+
+// First View
+let token = localStorage.getItem('token');
+document.addEventListener('DOMContentLoaded', async () => {
+  // 未ログインのためログイン画面を表示する
+  if(token == null) return renderComponent('login');
+  // クエリパラメータに `download` があるか確認する
+  if(!location.search.includes('download')) {
+    // ファイル一覧表示
+    renderComponent('list');
+    await showDirectory(undefined, location.pathname);
+  } else {
+    // 対象ファイルが存在するディレクトリパスを表示しつつファイルダウンロードする
+    renderComponent('list');
+    let parentPath = location.pathname.split('/');
+    parentPath.pop();  // 末尾 = ファイル名部分を削除する
+    parentPath = parentPath.join('/') || '/';  // 末尾がなかった場合は `/` とする
+    await Promise.all([
+      showDirectory(undefined, parentPath),       // ファイルがある親ディレクトリを表示する
+      downloadFile(undefined, location.pathname)  // ファイルダウンロード
+    ]);
+  }
+});
+
+// Pop State
+window.addEventListener('popstate', async (event) => {
+  /** @type {{ path: string; isLogined: boolean; }} State */
+  const state = event.state;
+  if(!state.isLogined || token == null) return renderComponent('login');
+  renderComponent('list');
+  await showDirectory(undefined, state.path || '/', true);
+});
+
+/**
+ * コンポーネントを表示する
+ * 
+ * @param {'login' | 'list'} name コンポーネント名
+ */
+function renderComponent(name = 'login') {
+  document.getElementById('login-component').style.display = name === 'login' ? 'block' : 'none' ;
+  document.getElementById('list-component' ).style.display = name === 'list'  ? 'block' : 'none';
+  document.getElementById('list-directory-tbody').innerHTML = '';
+  if(name === 'login') {  // ログイン画面表示時の処理だけココでやる
+    localStorage.removeItem('token');
+    token = null;
+    history.pushState({ path: '/', isLogined: false }, '', '/');
+  }
+}
+
+/** 「Login」ボタン押下時 : ログイン処理 */
+async function login() {
+  try {
+    document.getElementById('login-error').innerText = '';
+    // Login
+    const inputToken = document.getElementById('login-token').value;
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: inputToken })
+    });
+    const json = await response.json();
+    if(json.error) throw json.error;
+    // Succeeded
+    token = inputToken;
+    localStorage.setItem('token', token);
+    document.getElementById('login-token').value = '';
+    // Render List Page
+    renderComponent('list');
+    await showDirectory(undefined, '/');  // Root Directory
+  } catch(error) { document.getElementById('login-error').innerText = `Login Error : ${error}`; }
+}
+
+/**
+ * ログイン後の画面遷移時・ディレクトリリンク押下時 : ディレクトリ配下のファイル一覧を表示する
+ * 
+ * @param {Event | undefined} 画面からのクリック時はイベント伝播を中止する
+ * @param {string} path パス・ルートは OS 問わず `/` で表現する
+ * @param {boolean | undefined} isSkipPushState `true` を指定すると `pushState()` を行わない (Pop State 時に使用)
+ */
+async function showDirectory(event = undefined, path = '/', isSkipPushState = false) {
+  try {
+    event?.preventDefault();
+    document.getElementById('list-error').innerText = '';
+    // Fetch Files
+    const response = await fetch(path, { headers: { authorization : `Bearer ${token}` } });  // `authorization` 小文字指定
+    const json = await response.json();
+    if(json.error) throw json.error;
+    // Render Table
+    document.getElementById('list-path').innerText = `[${json.hostName}]\n${decodeURIComponent(path)}`;
+    // 一階層上のリンク : 現在のパスが `/` の場合は表示しない
+    const moveUp = path === '/' ? '' : `
+      <tr>
+        <td><a href="${json.parentPath}" onclick="showDirectory(event, '${json.parentPath}');">../</a></td>
+        <td class="right">-</td>
+        <td>-</td>
+      </tr>
+    `;
+    document.getElementById('list-directory-tbody').innerHTML = moveUp + json.files.map((file) => {
+      const pathName = path === '/' ? `/${file.name}` : `${path}/${file.name}`
+      const nameLink = file.isDirectory
+        ? `<a href="${pathName}"               onclick="showDirectory(event, '${pathName}');">`
+        : `<a href="${pathName}?download=true" onclick="downloadFile (event, '${pathName}');">`;
+      return `
+        <tr>
+          <td>${nameLink}${file.name}${file.isDirectory ? '/' : '' }</a></td>
+          <td class="nowrap right">${file.size}</td>
+          <td class="nowrap">${file.updated}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch(error) { document.getElementById('list-error').innerText = `Show Directory Error : ${error}`;
+  } finally { if(!isSkipPushState) history.pushState({ path, isLogined: true }, '', path); }
+}
+
+/**
+ * ファイル名リンク押下時 : ファイルをダウンロードする
+ * 
+ * @param {Event | undefined} 画面からのクリック時はイベント伝播を中止する
+ * @param {string} path パス・ルートは OS 問わず `/` で表現する
+ */
+async function downloadFile(event = undefined, path = '/') {
+  try {
+    event?.preventDefault();
+    document.getElementById('list-error').innerText = '';
+    // Download File
+    const response = await fetch(`${path}?download=true`, { headers: { authorization : `Bearer ${token}` } });
+    // Open Download Dialog
+    const disposition   = response.headers.get('Content-Disposition');
+    const fileNameMatch = disposition.match((/filename\*=UTF-8''(.*)/))?.[1] ?? disposition.match((/filename="(.*)"$/))?.[1];
+    const fileBlob    = await response.blob();
+    const aElement    = document.createElement('a');
+    aElement.href     = URL.createObjectURL(fileBlob);
+    aElement.download = decodeURIComponent(fileNameMatch ?? 'DOWNLOAD-FILE');  // File Name
+    aElement.click();
+  } catch(error) { document.getElementById('list-error').innerText = `Download File Error : ${error}`;}
+}
+
+    </script>
+  </body>
+</html>

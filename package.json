@@ -1,0 +1,12 @@
+{
+  "name": "world-banc",
+  "description": "World Banc",
+  "private": true,
+  "scripts": {
+    "start": "node ./index.js"
+  },
+  "dependencies": {
+    "drivelist": "11.0.4",
+    "express": "4.18.2"
+  }
+}
